@@ -1,8 +1,8 @@
-**LevelDB is a fast key-value storage library written at Google that provides an ordered mapping from string keys to string values.为了
-让leveldb更加适应分布式环境，在原有基础上我们又新增了一些接口，丰富其功能**
+**LevelDB is a fast key-value storage library written at Google that provides an ordered mapping from string keys to string values.**
 
-[![Build Status](https://travis-ci.org/google/leveldb.svg?branch=master)](https://travis-ci.org/google/leveldb)
-[![Build status](https://ci.appveyor.com/api/projects/status/g2j5j4rfkda6eyw5/branch/master?svg=true)](https://ci.appveyor.com/project/pwnall/leveldb)
+**为了让leveldb更加适应分布式环境，在原有基础上我们又新增了一些接口，丰富其功能**
+
+[![Build Status](https://travis-ci.com/dmclNewbee302/leveldb.svg?branch=master)](https://travis-ci.com/dmclNewbee302/leveldb)
 
 Authors: Sanjay Ghemawat (sanjay@google.com) and Jeff Dean (jeff@google.com)
 
