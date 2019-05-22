@@ -49,6 +49,17 @@ class DBImpl : public DB {
   void GetApproximateSizes(const Range* range, int n, uint64_t* sizes) override;
   void CompactRange(const Slice* begin, const Slice* end) override;
 
+
+  // ###################
+  virtual Status DumpRange(const std::string& fname,
+                   const Slice& start, 
+                   const Slice& end);
+  virtual Status LoadRange(const std::string& fname,
+                   std::string* start,
+                   std::string* end);
+  // ###################
+
+
   // Extra methods (for testing) that are not in the public DB interface
 
   // Compact any files in the named level that overlap [*begin,*end]

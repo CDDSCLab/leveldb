@@ -35,7 +35,6 @@
 #include "util/coding.h"
 #include "util/logging.h"
 #include "util/mutexlock.h"
-
 namespace leveldb {
 
 const int kNumNonTableCacheFiles = 10;
@@ -1449,6 +1448,104 @@ void DBImpl::GetApproximateSizes(const Range* range, int n, uint64_t* sizes) {
 
   v->Unref();
 }
+
+
+// ########################
+Status DBImpl::DumpRange(const std::string& fname,
+                         const Slice& start, 
+                         const Slice& end) {
+    Status s;
+    WritableFile* file;
+    env_->NewWritableFile(fname, &file);
+
+    Options options;
+    options.filter_policy = nullptr;
+    options.compression = kSnappyCompression;
+    TableBuilder* builder = new TableBuilder(options, file);
+
+    ReadOptions readoption;
+    readoption.fill_cache = true;
+    Iterator *it = NewIterator(readoption);
+    //printf("START DUMPING....\n");
+
+    for (it->Seek(start); it->Valid() && it->key().ToString() < end.ToString(); it->Next())
+    {
+       //printf("\rDUMP FOR KEY: %s\n", it->key().ToString().c_str());
+       builder->Add(it->key(), it->value());
+    }
+
+    // Finish and check for builder errors
+    s = builder->Finish();
+    if (s.ok()) {
+      assert(builder->FileSize() > 0);
+    }
+    delete builder;
+
+    // Finish and check for file errors
+    if (s.ok()) {
+      s = file->Sync();
+    }
+    if (s.ok()) {
+      s = file->Close();
+    }
+    delete file;
+    file = nullptr;
+
+    // Check for input iterator errors
+    if (!it->status().ok()) {
+      s = it->status();
+    }
+
+    if (s.ok()) {
+      // Keep it
+    } else {
+      env_->DeleteFile(fname);
+    }
+    return s;
+}
+
+Status DBImpl::LoadRange(const std::string& fname,
+                   std::string* start, 
+                   std::string* end){
+  Status s;
+  uint64_t file_size;
+  RandomAccessFile* file = nullptr;
+  Table* table = nullptr;
+
+  s = env_->GetFileSize(fname, &file_size);
+  if (s.ok()) {
+    s = env_->NewRandomAccessFile(fname, &file);
+  }
+
+  Options options;
+  options.filter_policy = nullptr;
+  options.compression = kSnappyCompression;
+  if (s.ok()) {
+    s = Table::Open(options, file, file_size, &table);
+  }
+
+  if (!s.ok()) {
+    delete table;
+    delete file;
+    return s;
+  }
+
+  ReadOptions readoptions;
+  readoptions.fill_cache = true;
+  Iterator* iter = table->NewIterator(readoptions);
+  WriteBatch batch;
+  //printf("START LOADING...");
+  iter->SeekToFirst();
+  start->assign(iter->key().data(), iter->key().size());
+  for (; iter->Valid(); iter->Next()) {
+    end->assign(iter->key().data(), iter->key().size());
+    //printf("LOAD Key: [%s], value: [%s]\n", iter->key().ToString().c_str(), iter->value().ToString().c_str());
+    batch.Put(iter->key(), iter->value());
+  }
+  s = Write(WriteOptions(), &batch);
+  return s;
+}
+// ########################
 
 // Default implementations of convenience methods that subclasses of DB
 // can call if they wish

@@ -145,6 +145,17 @@ class LEVELDB_EXPORT DB {
   // Therefore the following call will compact the entire database:
   //    db->CompactRange(nullptr, nullptr);
   virtual void CompactRange(const Slice* begin, const Slice* end) = 0;
+
+  // ###################
+  virtual Status DumpRange(const std::string& fname,
+                   const Slice& start, 
+                   const Slice& end) = 0;
+  virtual Status LoadRange(const std::string& fname,
+                   std::string* start, 
+                   std::string* end) = 0;
+  // ###################
+
+
 };
 
 // Destroy the contents of the specified database.
