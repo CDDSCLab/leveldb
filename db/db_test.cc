@@ -2080,6 +2080,19 @@ class ModelDB : public DB {
   }
   void CompactRange(const Slice* start, const Slice* end) override {}
 
+  // ###################
+  virtual Status DumpRange(const std::string& fname,
+                   const Slice& start, 
+                   const Slice& end){
+    return Status();
+  }
+  virtual Status LoadRange(const std::string& fname,
+                   std::string* start, 
+                   std::string* end) {
+    return Status();
+  }
+  // ###################
+
  private:
   class ModelIter : public Iterator {
    public:
