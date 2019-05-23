@@ -54,9 +54,13 @@ class DBImpl : public DB {
   virtual Status DumpRange(const std::string& fname,
                    const Slice& start, 
                    const Slice& end);
+
   virtual Status LoadRange(const std::string& fname,
                    std::string* start,
                    std::string* end);
+  
+  virtual Status IngestRanges(const std::string& oldfname, 
+                                  const std::string& newfname);
   // ###################
 
 

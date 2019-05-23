@@ -1467,9 +1467,10 @@ Status DBImpl::DumpRange(const std::string& fname,
     readoption.fill_cache = true;
     Iterator *it = NewIterator(readoption);
     //printf("START DUMPING....\n");
-
-    for (it->Seek(start); it->Valid() && it->key().ToString() < end.ToString(); it->Next())
-    {
+    
+    for (it->Seek(start); 
+         it->Valid() && options.comparator->Compare(it->key(), end) < 0;
+         it->Next()) {
        //printf("\rDUMP FOR KEY: %s\n", it->key().ToString().c_str());
        builder->Add(it->key(), it->value());
     }
@@ -1495,6 +1496,7 @@ Status DBImpl::DumpRange(const std::string& fname,
     if (!it->status().ok()) {
       s = it->status();
     }
+    delete it;
 
     if (s.ok()) {
       // Keep it
@@ -1543,8 +1545,120 @@ Status DBImpl::LoadRange(const std::string& fname,
     batch.Put(iter->key(), iter->value());
   }
   s = Write(WriteOptions(), &batch);
+  
+  delete iter;
+  delete table;
+  delete file;
   return s;
 }
+
+// Find diff between two range files created by LoadRange
+// and apply diff to db.
+Status DBImpl::IngestRanges(const std::string& oldfname, 
+                            const std::string& newfname) {
+  Status s;
+  Options options;
+  options.filter_policy = nullptr;
+  options.compression = kSnappyCompression;
+  ReadOptions readoptions;
+  readoptions.fill_cache = true;
+
+  // get iterator for old file
+  uint64_t oldfile_size;
+  RandomAccessFile* oldfile = nullptr;
+  Table* oldtable = nullptr;
+
+  s = env_->GetFileSize(oldfname, &oldfile_size);
+  if (s.ok()) {
+    s = env_->NewRandomAccessFile(oldfname, &oldfile);
+  }
+
+  if (s.ok()) {
+    s = Table::Open(options, oldfile, oldfile_size, &oldtable);
+  }
+
+  if (!s.ok()) {
+    delete oldtable;
+    delete oldfile;
+    return s;
+  }
+
+  Iterator* olditer = oldtable->NewIterator(readoptions);
+
+  // get iterator for new file
+  uint64_t newfile_size;
+  RandomAccessFile* newfile = nullptr;
+  Table* newtable = nullptr;
+
+  s = env_->GetFileSize(newfname, &newfile_size);
+  if (s.ok()) {
+    s = env_->NewRandomAccessFile(newfname, &newfile);
+  }
+
+  if (s.ok()) {
+    s = Table::Open(options, newfile, newfile_size, &newtable);
+  }
+
+  if (!s.ok()) {
+    delete oldtable;
+    delete oldfile;
+    delete newtable;
+    delete newfile;
+    return s;
+  }
+
+  Iterator* newiter = newtable->NewIterator(readoptions);
+
+  // Merge two iter and update db
+  WriteBatch batch;
+
+  olditer->SeekToFirst();
+  newiter->SeekToFirst();
+  while (true)
+  {
+    if(!olditer->Valid()) {
+      if(newiter->Valid()) {
+        batch.Put(newiter->key(), newiter->value());
+        newiter->Next();
+      }
+      else break;
+    }
+    else if(!newiter->Valid()){
+      batch.Delete(olditer->key());
+      olditer->Next();
+    }
+    else {
+      int cmp = options.comparator->Compare(olditer->key(), newiter->key());
+      if (cmp < 0) {
+        batch.Delete(olditer->key());
+        olditer->Next();
+      }
+      else if (cmp == 0) {
+        if (options.comparator->Compare(olditer->value(), newiter->value()) != 0) {
+          batch.Put(newiter->key(), newiter->value());
+        }
+        olditer->Next();
+        newiter->Next();
+      }
+      else {
+        batch.Put(newiter->key(), newiter->value());
+        newiter->Next();
+      }
+    }
+  }
+
+  s = Write(WriteOptions(), &batch);
+  
+  delete olditer;
+  delete oldtable;
+  delete oldfile;
+  delete newiter;
+  delete newtable;
+  delete newfile;
+
+  return s;
+}
+
 // ########################
 
 // Default implementations of convenience methods that subclasses of DB

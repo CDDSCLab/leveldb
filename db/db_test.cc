@@ -2091,6 +2091,11 @@ class ModelDB : public DB {
                    std::string* end) {
     return Status();
   }
+
+  virtual Status IngestRanges(const std::string& oldfname, 
+                                  const std::string& newfname) {
+    return Status();
+  }
   // ###################
 
  private:
