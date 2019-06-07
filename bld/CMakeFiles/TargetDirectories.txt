@@ -1,9 +1,0 @@
-/home/ehds/Programs/leveldb/bld/CMakeFiles/install/strip.dir
-/home/ehds/Programs/leveldb/bld/CMakeFiles/install/local.dir
-/home/ehds/Programs/leveldb/bld/CMakeFiles/edit_cache.dir
-/home/ehds/Programs/leveldb/bld/CMakeFiles/install.dir
-/home/ehds/Programs/leveldb/bld/CMakeFiles/list_install_components.dir
-/home/ehds/Programs/leveldb/bld/CMakeFiles/leveldb.dir
-/home/ehds/Programs/leveldb/bld/CMakeFiles/db_bench.dir
-/home/ehds/Programs/leveldb/bld/CMakeFiles/leveldbutil.dir
-/home/ehds/Programs/leveldb/bld/CMakeFiles/rebuild_cache.dir

@@ -4,14 +4,12 @@
 
 language: cpp
 dist: xenial
-osx_image: xcode10.2
 
 compiler:
 - gcc
 - clang
 os:
 - linux
-- osx
 
 env:
 - BUILD_TYPE=Debug
@@ -32,18 +30,6 @@ addons:
     - libsnappy-dev
     - libsqlite3-dev
     - ninja-build
-  homebrew:
-    packages:
-    - cmake
-    - crc32c
-    - gcc@8
-    - gperftools
-    - kyotocabinet
-    - llvm@8
-    - ninja
-    - snappy
-    - sqlite3
-    update: true
 
 install:
 # The following Homebrew packages aren't linked by default, and need to be
